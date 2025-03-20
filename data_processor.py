@@ -18,76 +18,127 @@ class DataProcessor:
         """Clean and structure lecturer data"""
         cleaned_data = {}
         
-        # These are the actual column names from your Excel
+        print("Processing Lecturer Data...")
+        print(f"Columns found: {df.columns.tolist()}")
+        
         for _, row in df.iterrows():
-            lecturer_id = str(row['Lecturer ID']).strip()
-            cleaned_data[lecturer_id] = {
-                'title': str(row['Lecture Title']).strip(),
-                'code': str(row['lecture Code']).strip(),
-                'length': str(row['Length']).strip(),
-                'start_term': str(row['Start Term']).strip(),
-                'section': str(row['Section number']).strip()
-            }
+            try:
+                # Using exact column names from Excel
+                lecturer_id = str(row['Lecturer ID']).strip()
+                cleaned_data[lecturer_id] = {
+                    'title': str(row['Lecture Title']).strip(),
+                    'code': str(row['lecture Code']).strip(),
+                    'length': str(row['Length']).strip(),
+                    'start_term': str(row['Start Term']).strip(),
+                    'section': str(row['Section number']).strip()
+                }
+            except Exception as e:
+                print(f"Warning: Error processing lecturer {lecturer_id if 'lecturer_id' in locals() else 'unknown'}: {str(e)}")
+                continue
+        
+        print(f"Successfully processed {len(cleaned_data)} lecturers")
         return cleaned_data
 
     def clean_room_data(self, df: pd.DataFrame) -> Dict:
         """Clean and structure room data"""
         cleaned_data = {}
         
+        print("Processing Room Data...")
+        print(f"Columns found: {df.columns.tolist()}")
+        
         for _, row in df.iterrows():
-            room_id = str(row['Room Number']).strip()
-            cleaned_data[room_id] = {
-                'course_title': str(row['Course Title']).strip(),
-                'section': str(row['Section number']).strip(),
-                'year': str(row[' Year']).strip(),  # Note the space before Year
-                'term': str(row['Term Description']).strip(),
-                'prof_id': str(row['prof ID']).strip(),
-                'lecture_id': str(row['lecture ID']).strip(),
-                'course_code': str(row['Course Code']).strip(),
-                'course_length': str(row['Course Length']).strip(),
-                'term_name': str(row['Term name']).strip()
-            }
+            try:
+                room_id = str(row['Room Number']).strip()
+                cleaned_data[room_id] = {
+                    'course_title': str(row['Course Title']).strip() if 'Course Title' in row else '',
+                    'section': str(row['Section number']).strip() if 'Section number' in row else '',
+                    'year': str(row['Year']).strip() if 'Year' in row else '',  # Removed space before Year
+                    'term': str(row['Term Description']).strip() if 'Term Description' in row else '',
+                    'lecturer_id': str(row['Lecturer ID']).strip() if 'Lecturer ID' in row else '',
+                    'lecture_id': str(row['Lecture ID']).strip() if 'Lecture ID' in row else '',
+                    'course_code': str(row['Course Code']).strip() if 'Course Code' in row else '',
+                    'length': str(row['Length']).strip() if 'Length' in row else ''
+                }
+            except Exception as e:
+                print(f"Warning: Error processing room row: {str(e)}")
+                continue
         return cleaned_data
 
     def clean_course_data(self, df: pd.DataFrame) -> Dict:
         """Clean and structure course data"""
         cleaned_data = {}
         
+        print("Processing Course Data...")
+        print(f"Columns found: {df.columns.tolist()}")
+        
         for _, row in df.iterrows():
-            course_id = str(row['Course code']).strip()  # Changed from 'Course Code' to 'Course code'
-            cleaned_data[course_id] = {
-                'title': str(row['Title']).strip(),
-                'length': str(row['Length']).strip(),
-                'priority': str(row['Priority']).strip(),
-                'available_blocks': str(row['Available blocks']).strip(),
-                'unavailable_blocks': str(row['Unavailable blocks']).strip(),
-                'min_size': str(row['Minimum section size']).strip(),
-                'target_size': str(row['Target section size']).strip(),
-                'max_size': str(row['Maximum section size']).strip(),
-                'num_sections': str(row['Number of sections']).strip(),
-                'total_credits': str(row['Total credits']).strip()
-            }
+            try:
+                course_id = str(row['Course code']).strip()  # Note: case sensitive
+                cleaned_data[course_id] = {
+                    'title': str(row['Title']).strip(),
+                    'type': str(row['Type']).strip() if 'Type' in row else 'Regular',
+                    'length': str(row['Length']).strip() if 'Length' in row else '1',
+                    'priority': str(row['Priority']).strip() if 'Priority' in row else 'Required',
+                    'min_size': int(row['Minimum section size']) if 'Minimum section size' in row else 10,
+                    'target_size': int(row['Target section size']) if 'Target section size' in row else 25,
+                    'max_size': int(row['Maximum section size']) if 'Maximum section size' in row else 30,
+                    'num_sections': int(row['Number of sections']) if 'Number of sections' in row else 1,
+                    'credits': float(row['Credits']) if 'Credits' in row else 1.0
+                }
+            except Exception as e:
+                print(f"Warning: Error processing course {course_id if 'course_id' in locals() else 'unknown'}: {str(e)}")
+                continue
         return cleaned_data
 
     def clean_student_requests(self, df: pd.DataFrame) -> List:
         """Clean and structure student course requests"""
         cleaned_data = []
         
+        print("Processing Student Requests...")
+        print(f"Columns found: {df.columns.tolist()}")
+        
+        # Get valid course codes
+        valid_courses = set(self.courses.keys())
+        
+        # Priority mapping
+        priority_mapping = {
+            'Core course': 'Required',
+            'Required': 'Required',
+            'Requested': 'Requested',
+            'Recommended': 'Recommended'
+        }
+        
         for _, row in df.iterrows():
-            request_data = {
-                'college_year': str(row['College Year']).strip(),
-                'start_term': str(row['Request start term']).strip(),
-                'title': str(row['Title']).strip(),
-                'type': str(row['Type']).strip(),
-                'student_id': str(row['student ID']).strip(),
-                'course_id': str(row['Course ID']).strip(),
-                'length': str(row['Length']).strip(),
-                'course_code': str(row['Course code']).strip(),
-                'priority': str(row['Priority']).strip(),
-                'departments': str(row['Department(s)']).strip(),
-                'credits': str(row['Credits']).strip()
-            }
-            cleaned_data.append(request_data)
+            try:
+                course_code = str(row['Course code']).strip()
+                
+                # Skip invalid course codes
+                if course_code in ['INTERN1', 'INTERN2', 'INDSTUDY1', 'INDSTUDY2', 'STUDY', 'nan', '']:
+                    continue
+                    
+                if course_code not in valid_courses:
+                    continue
+                    
+                # Map the priority value
+                raw_priority = str(row['Priority']).strip()
+                priority = priority_mapping.get(raw_priority, 'Requested')  # Default to 'Requested' if unknown
+                
+                request_data = {
+                    'student_id': str(row['student ID']).strip(),
+                    'course_code': course_code,
+                    'title': str(row['Title']).strip(),
+                    'type': str(row['Type']).strip(),
+                    'priority': priority,  # Use mapped priority
+                    'length': str(row['Length']).strip(),
+                    'credits': float(row['Credits']) if pd.notna(row['Credits']) else 0.0,
+                    'college_year': str(row['College Year']).strip(),
+                    'department': str(row['Department(s)']).strip()
+                }
+                cleaned_data.append(request_data)
+            except Exception as e:
+                print(f"Warning: Error processing request: {str(e)}")
+                continue
+            
         return cleaned_data
 
     def validate_data(self) -> List[str]:
